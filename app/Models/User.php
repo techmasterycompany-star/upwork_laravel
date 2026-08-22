@@ -61,4 +61,8 @@ class User extends Authenticatable
     {
         return $this->hasMany(Notification::class);
     }
+    public function verificationCodes()
+{
+    return $this->hasMany(VerificationCode::class);
+}
 }
