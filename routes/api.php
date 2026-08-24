@@ -71,7 +71,8 @@ Route::middleware(['auth:sanctum', 'role:candidate'])->prefix('candidate')->grou
     Route::get('/wishlist', [WishlistController::class, 'index']);
     Route::post('/wishlist/{job}', [WishlistController::class, 'store']);
     Route::delete('/wishlist/{job}', [WishlistController::class, 'destroy']);
-
+    
+    Route::post('/jobs/{job}/apply', [CandidateApplicationController::class, 'store']);
     Route::get('/applications', [CandidateApplicationController::class, 'index']);
     Route::get('/applications/{application}', [CandidateApplicationController::class, 'show']);
     Route::patch('/applications/{application}/cancel', [CandidateApplicationController::class, 'cancel']);

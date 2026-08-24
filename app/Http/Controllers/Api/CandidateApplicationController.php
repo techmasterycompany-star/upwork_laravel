@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreApplicationRequest;
 use App\Models\Application;
+use App\Models\JobListing;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -32,6 +34,44 @@ class CandidateApplicationController extends Controller
             'success' => true,
             'application' => $application->load('job.category', 'job.employer'),
         ]);
+    }
+
+    public function store(StoreApplicationRequest $request, JobListing $job): JsonResponse
+    {
+        $profile = $request->user()->candidateProfile;
+
+        if ($job->status !== 'approved') {
+            return response()->json([
+                'success' => false,
+                'message' => 'This job is not open for applications.',
+            ], 422);
+        }
+
+        $alreadyApplied = $profile->applications()->where('job_id', $job->id)->exists();
+
+        if ($alreadyApplied) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You have already applied to this job.',
+            ], 409);
+        }
+
+        $application = $profile->applications()->create([
+            'job_id'         => $job->id,
+            'resume'         => $profile->resume,
+            'cover_letter'   => $request->validated('cover_letter'),
+            'contact_email'  => $request->user()->email,
+            'contact_phone'  => $profile->phone,
+            'status'         => 'submitted',
+        ]);
+
+        $job->increment('applications_count');
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Application submitted successfully.',
+            'application' => $application,
+        ], 201);
     }
 
     public function cancel(Request $request, Application $application): JsonResponse
