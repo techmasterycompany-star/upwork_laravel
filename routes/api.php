@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\CandidateProfileController;
 use App\Http\Controllers\Api\CandidateSkillController;
 use App\Http\Controllers\Api\JobSearchController;
 use App\Http\Controllers\Api\SavedSearchController;
+use App\Http\Controllers\Api\WishlistController;
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
@@ -64,7 +65,11 @@ Route::middleware(['auth:sanctum', 'role:candidate'])->prefix('candidate')->grou
 
     Route::get('/saved-searches', [SavedSearchController::class, 'index']);
     Route::post('/saved-searches', [SavedSearchController::class, 'store']);
-    Route::delete('/saved-searches/{savedSearch}', [SavedSearchController::class, 'destroy']);
+    Route::delete('/saved-searches/{id}', [SavedSearchController::class, 'destroy']);
+
+    Route::get('/wishlist', [WishlistController::class, 'index']);
+    Route::post('/wishlist/{job}', [WishlistController::class, 'store']);
+    Route::delete('/wishlist/{job}', [WishlistController::class, 'destroy']);
 });
 
 Route::prefix('jobs')->group(function () {
