@@ -22,7 +22,6 @@ class PublicJobListingController extends Controller
         ]);
     }
 
-    
     public function show(JobListing $job): JsonResponse
     {
         if ($job->status !== 'approved') {
@@ -34,9 +33,20 @@ class PublicJobListingController extends Controller
 
         $job->increment('views_count');
 
+        $job->load([
+            'category',
+            'technologies',
+            'employer',
+            'comments' => function ($query) {
+                $query->where('is_approved', true)
+                    ->with('user:id,name')
+                    ->latest();
+            },
+        ]);
+
         return response()->json([
             'success' => true,
-            'job' => $job->load('category', 'technologies', 'employer'),
+            'job' => $job,
         ]);
     }
 }
