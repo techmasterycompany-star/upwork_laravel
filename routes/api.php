@@ -6,18 +6,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\EmployerProfileController;
 use App\Http\Controllers\Api\JobListingController;
+use App\Http\Controllers\Api\PublicJobListingController;
 
-
-/*
-|--------------------------------------------------------------------------
-| API Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register API routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "api" middleware group. Make something great!
-|
-*/
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
@@ -46,4 +36,10 @@ Route::middleware(['auth:sanctum', 'role:employer'])->prefix('employer')->group(
     Route::get('/jobs/{job}', [JobListingController::class, 'show']);
     Route::put('/jobs/{job}', [JobListingController::class, 'update']);
     Route::patch('/jobs/{job}/close', [JobListingController::class, 'close']);
+});
+
+// Public job listing (no auth required)
+Route::prefix('jobs')->group(function () {
+    Route::get('/', [PublicJobListingController::class, 'index']);
+    Route::get('/{job}', [PublicJobListingController::class, 'show']);
 });
