@@ -11,6 +11,8 @@ use App\Http\Controllers\Api\EmployerApplicationController;
 use App\Http\Controllers\Api\CandidateSearchController;
 use App\Http\Controllers\Api\CandidateProfileController;
 use App\Http\Controllers\Api\CandidateSkillController;
+use App\Http\Controllers\Api\JobSearchController;
+use App\Http\Controllers\Api\SavedSearchController;
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
@@ -59,9 +61,14 @@ Route::middleware(['auth:sanctum', 'role:candidate'])->prefix('candidate')->grou
     Route::post('/skills', [CandidateSkillController::class, 'store']);
     Route::patch('/skills/{skill}', [CandidateSkillController::class, 'update']);
     Route::delete('/skills/{skill}', [CandidateSkillController::class, 'destroy']);
+
+    Route::get('/saved-searches', [SavedSearchController::class, 'index']);
+    Route::post('/saved-searches', [SavedSearchController::class, 'store']);
+    Route::delete('/saved-searches/{savedSearch}', [SavedSearchController::class, 'destroy']);
 });
 
 Route::prefix('jobs')->group(function () {
     Route::get('/', [PublicJobListingController::class, 'index']);
+    Route::get('/search', [JobSearchController::class, 'index']);
     Route::get('/{job}', [PublicJobListingController::class, 'show']);
 });
