@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\PublicJobListingController;
 use App\Http\Controllers\Api\EmployerApplicationController;
 use App\Http\Controllers\Api\CandidateSearchController;
 use App\Http\Controllers\Api\CandidateProfileController;
+use App\Http\Controllers\Api\CandidateSkillController;
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
@@ -53,6 +54,11 @@ Route::middleware(['auth:sanctum', 'role:candidate'])->prefix('candidate')->grou
     Route::get('/profile', [CandidateProfileController::class, 'show']);
     Route::put('/profile', [CandidateProfileController::class, 'update']);
     Route::post('/profile/resume', [CandidateProfileController::class, 'uploadResume']);
+
+    Route::get('/skills', [CandidateSkillController::class, 'index']);
+    Route::post('/skills', [CandidateSkillController::class, 'store']);
+    Route::patch('/skills/{skill}', [CandidateSkillController::class, 'update']);
+    Route::delete('/skills/{skill}', [CandidateSkillController::class, 'destroy']);
 });
 
 Route::prefix('jobs')->group(function () {
