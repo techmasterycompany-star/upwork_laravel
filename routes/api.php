@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\JobSearchController;
 use App\Http\Controllers\Api\SavedSearchController;
 use App\Http\Controllers\Api\WishlistController;
 use App\Http\Controllers\Api\CandidateApplicationController;
+use App\Http\Controllers\Api\CommentController;
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
@@ -71,11 +72,17 @@ Route::middleware(['auth:sanctum', 'role:candidate'])->prefix('candidate')->grou
     Route::get('/wishlist', [WishlistController::class, 'index']);
     Route::post('/wishlist/{job}', [WishlistController::class, 'store']);
     Route::delete('/wishlist/{job}', [WishlistController::class, 'destroy']);
-    
+
     Route::post('/jobs/{job}/apply', [CandidateApplicationController::class, 'store']);
     Route::get('/applications', [CandidateApplicationController::class, 'index']);
     Route::get('/applications/{application}', [CandidateApplicationController::class, 'show']);
     Route::patch('/applications/{application}/cancel', [CandidateApplicationController::class, 'cancel']);
+});
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/jobs/{job}/comments', [CommentController::class, 'store']);
+    Route::put('/comments/{comment}', [CommentController::class, 'update']);
+    Route::delete('/comments/{comment}', [CommentController::class, 'destroy']);
 });
 
 Route::prefix('jobs')->group(function () {
