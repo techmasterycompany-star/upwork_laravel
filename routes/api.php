@@ -14,6 +14,8 @@ use App\Http\Controllers\Api\Admin\UserManagementController;
 use App\Http\Controllers\Api\JobListingController;
 use App\Http\Controllers\Api\PublicJobListingController;
 use App\Http\Controllers\Api\EmployerApplicationController;
+use App\Http\Controllers\Api\CandidateSearchController;
+
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
@@ -69,7 +71,11 @@ Route::middleware(['auth:sanctum', 'role:employer'])->prefix('employer')->group(
     Route::patch('/applications/{application}/review', [EmployerApplicationController::class, 'markReviewed']);
     Route::patch('/applications/{application}/accept', [EmployerApplicationController::class, 'accept']);
     Route::patch('/applications/{application}/reject', [EmployerApplicationController::class, 'reject']);
+
+    Route::get('/candidates', [CandidateSearchController::class, 'index']);
+    Route::get('/candidates/{candidate}', [CandidateSearchController::class, 'show']);
 });
+
 
 Route::prefix('jobs')->group(function () {
     Route::get('/', [PublicJobListingController::class, 'index']);
