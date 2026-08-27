@@ -8,6 +8,8 @@ use App\Http\Controllers\Api\Admin\TechnologyController;
 use App\Http\Controllers\Api\Admin\JobApprovalController;
 use App\Http\Controllers\Api\Admin\CommentModerationController;
 use App\Http\Controllers\Api\Admin\AuditLogController;
+use App\Http\Controllers\Api\Admin\DashboardController;
+
 
 
 
@@ -60,7 +62,9 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
     Route::post('/users/{user}/block', [UserManagementController::class, 'block']);
     Route::post('/users/{user}/unblock', [UserManagementController::class, 'unblock']);
     Route::delete('/users/{user}', [UserManagementController::class, 'destroy']);
-    
+
     Route::get('/audit-logs', [AuditLogController::class, 'index']);
+    
+    Route::get('/dashboard', [DashboardController::class, 'index']);
     
 });
