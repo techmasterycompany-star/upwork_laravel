@@ -8,17 +8,19 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('saved_searches', function (Blueprint $table) {
+        Schema::create('verification_codes', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->string('name')->nullable();
-            $table->json('filters'); // keyword, location, category_id, work_type, salary_min, salary_max, experience_level, sort_by
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->enum('type', ['email_verification', 'password_reset']);
+            $table->string('code');
+            $table->boolean('is_used')->default(false);
+            $table->timestamp('expires_at');
             $table->timestamps();
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('saved_searches');
+        Schema::dropIfExists('verification_codes');
     }
 };
