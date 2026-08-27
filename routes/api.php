@@ -2,8 +2,15 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\Admin\CategoryController;
+use App\Http\Controllers\Api\Admin\TechnologyController;
+use App\Http\Controllers\Api\Admin\JobApprovalController;
+use App\Http\Controllers\Api\Admin\CommentModerationController;
+use App\Http\Controllers\Api\Admin\AuditLogController;
+
+
+
 
 
 /*
@@ -35,5 +42,25 @@ Route::prefix('auth')->group(function () {
 });
 
 
+use App\Http\Controllers\Api\Admin\UserManagementController;
 
+Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(function () {
+    Route::apiResource('categories', CategoryController::class)->except(['show']);
+    Route::apiResource('technologies', TechnologyController::class)->except(['show']);
 
+    Route::get('/jobs/pending', [JobApprovalController::class, 'pending']);
+    Route::post('/jobs/{job}/approve', [JobApprovalController::class, 'approve']);
+    Route::post('/jobs/{job}/reject', [JobApprovalController::class, 'reject']);
+
+    Route::get('/comments', [CommentModerationController::class, 'index']);
+    Route::post('/comments/{comment}/hide', [CommentModerationController::class, 'hide']);
+    Route::delete('/comments/{comment}', [CommentModerationController::class, 'destroy']);
+
+    Route::get('/users', [UserManagementController::class, 'index']);
+    Route::post('/users/{user}/block', [UserManagementController::class, 'block']);
+    Route::post('/users/{user}/unblock', [UserManagementController::class, 'unblock']);
+    Route::delete('/users/{user}', [UserManagementController::class, 'destroy']);
+    
+    Route::get('/audit-logs', [AuditLogController::class, 'index']);
+    
+});
