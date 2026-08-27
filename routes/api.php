@@ -9,22 +9,9 @@ use App\Http\Controllers\Api\Admin\JobApprovalController;
 use App\Http\Controllers\Api\Admin\CommentModerationController;
 use App\Http\Controllers\Api\Admin\AuditLogController;
 use App\Http\Controllers\Api\Admin\DashboardController;
+use App\Http\Controllers\Api\EmployerProfileController;
+use App\Http\Controllers\Api\Admin\UserManagementController;
 
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| API Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register API routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "api" middleware group. Make something great!
-|
-*/
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
@@ -42,10 +29,6 @@ Route::prefix('auth')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
     });
 });
-
-
-use App\Http\Controllers\Api\Admin\UserManagementController;
-
 Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(function () {
     Route::apiResource('categories', CategoryController::class)->except(['show']);
     Route::apiResource('technologies', TechnologyController::class)->except(['show']);
@@ -66,5 +49,10 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
     Route::get('/audit-logs', [AuditLogController::class, 'index']);
     
     Route::get('/dashboard', [DashboardController::class, 'index']);
+});
     
+Route::middleware(['auth:sanctum', 'role:employer'])->prefix('employer')->group(function () {
+    Route::get('/profile', [EmployerProfileController::class, 'show']);
+    Route::put('/profile', [EmployerProfileController::class, 'update']);
+    Route::post('/profile/logo', [EmployerProfileController::class, 'uploadLogo']);
 });
