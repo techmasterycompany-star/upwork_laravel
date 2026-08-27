@@ -33,4 +33,8 @@ class EmployerProfile extends Model
     {
         return $this->hasMany(Subscription::class, 'employer_id');
     }
+    public function jobListings()
+    {
+    return $this->hasMany(JobListing::class, 'employer_id');
+    }
 }

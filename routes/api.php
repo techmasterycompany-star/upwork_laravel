@@ -11,6 +11,8 @@ use App\Http\Controllers\Api\Admin\AuditLogController;
 use App\Http\Controllers\Api\Admin\DashboardController;
 use App\Http\Controllers\Api\EmployerProfileController;
 use App\Http\Controllers\Api\Admin\UserManagementController;
+use App\Http\Controllers\Api\JobListingController;
+use App\Http\Controllers\Api\PublicJobListingController;
 
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
@@ -55,4 +57,16 @@ Route::middleware(['auth:sanctum', 'role:employer'])->prefix('employer')->group(
     Route::get('/profile', [EmployerProfileController::class, 'show']);
     Route::put('/profile', [EmployerProfileController::class, 'update']);
     Route::post('/profile/logo', [EmployerProfileController::class, 'uploadLogo']);
+
+    Route::get('/jobs', [JobListingController::class, 'index']);
+    Route::post('/jobs', [JobListingController::class, 'store']);
+    Route::get('/jobs/{job}', [JobListingController::class, 'show']);
+    Route::put('/jobs/{job}', [JobListingController::class, 'update']);
+    Route::patch('/jobs/{job}/close', [JobListingController::class, 'close']);
+});
+
+// Public job listing (no auth required)
+Route::prefix('jobs')->group(function () {
+    Route::get('/', [PublicJobListingController::class, 'index']);
+    Route::get('/{job}', [PublicJobListingController::class, 'show']);
 });
