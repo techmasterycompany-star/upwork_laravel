@@ -13,7 +13,7 @@ use App\Http\Controllers\Api\EmployerProfileController;
 use App\Http\Controllers\Api\Admin\UserManagementController;
 use App\Http\Controllers\Api\JobListingController;
 use App\Http\Controllers\Api\PublicJobListingController;
-
+use App\Http\Controllers\Api\EmployerApplicationController;
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
@@ -63,9 +63,14 @@ Route::middleware(['auth:sanctum', 'role:employer'])->prefix('employer')->group(
     Route::get('/jobs/{job}', [JobListingController::class, 'show']);
     Route::put('/jobs/{job}', [JobListingController::class, 'update']);
     Route::patch('/jobs/{job}/close', [JobListingController::class, 'close']);
+
+    Route::get('/jobs/{job}/applications', [EmployerApplicationController::class, 'index']);
+    Route::get('/applications/{application}', [EmployerApplicationController::class, 'show']);
+    Route::patch('/applications/{application}/review', [EmployerApplicationController::class, 'markReviewed']);
+    Route::patch('/applications/{application}/accept', [EmployerApplicationController::class, 'accept']);
+    Route::patch('/applications/{application}/reject', [EmployerApplicationController::class, 'reject']);
 });
 
-// Public job listing (no auth required)
 Route::prefix('jobs')->group(function () {
     Route::get('/', [PublicJobListingController::class, 'index']);
     Route::get('/{job}', [PublicJobListingController::class, 'show']);
