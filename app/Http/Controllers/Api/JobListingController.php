@@ -45,32 +45,48 @@ class JobListingController extends Controller
     }
 
     
-    public function store(StoreJobListingRequest $request): JsonResponse
-    {
-        $employerProfile = $request->user()->employerProfile;
+   public function store(StoreJobListingRequest $request): JsonResponse
+{
+    $employerProfile = $request->user()->employerProfile;
 
-        if (! $employerProfile) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Please complete your employer profile before posting a job.',
-            ], 422);
-        }
-
-        $job = $employerProfile->jobListings()->create([
-            ...collect($request->validated())->except('technologies')->toArray(),
-            'status' => 'pending_approval',
-        ]);
-
-        if ($request->filled('technologies')) {
-            $job->technologies()->sync($request->input('technologies'));
-        }
-
+    if (! $employerProfile) {
         return response()->json([
-            'success' => true,
-            'message' => 'Job listing created and submitted for approval.',
-            'job' => $job->load('category', 'technologies'),
-        ], 201);
+            'success' => false,
+            'message' => 'Please complete your employer profile before posting a job.',
+        ], 422);
     }
+
+    $hasActiveSubscription = $employerProfile->subscriptions()
+        ->where('status', 'active')
+        ->where('current_period_end', '>=', now())
+        ->exists();
+
+    if (! $hasActiveSubscription && $employerProfile->free_jobs_used >= 3) {
+        return response()->json([
+            'success' => false,
+            'message' => 'You have used all your free job postings. Please subscribe to a plan to post more jobs.',
+        ], 403);
+    }
+
+    $job = $employerProfile->jobListings()->create([
+        ...collect($request->validated())->except('technologies')->toArray(),
+        'status' => 'pending_approval',
+    ]);
+
+    if ($request->filled('technologies')) {
+        $job->technologies()->sync($request->input('technologies'));
+    }
+
+    if (! $hasActiveSubscription) {
+        $employerProfile->increment('free_jobs_used');
+    }
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Job listing created and submitted for approval.',
+        'job' => $job->load('category', 'technologies'),
+    ], 201);
+}
 
     
     public function update(UpdateJobListingRequest $request, JobListing $job): JsonResponse

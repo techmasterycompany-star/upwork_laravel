@@ -22,6 +22,13 @@ use App\Http\Controllers\Api\SavedSearchController;
 use App\Http\Controllers\Api\WishlistController;
 use App\Http\Controllers\Api\CandidateApplicationController;
 use App\Http\Controllers\Api\CommentController;
+use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\Admin\PlanController;
+use App\Http\Controllers\Api\EmployerSubscriptionController;
+use App\Http\Controllers\Api\StripeWebhookController;
+use App\Http\Controllers\Api\PaypalPaymentController;
+
+
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
@@ -59,6 +66,8 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
     Route::get('/audit-logs', [AuditLogController::class, 'index']);
     
     Route::get('/dashboard', [DashboardController::class, 'index']);
+    Route::apiResource('plans', PlanController::class)->except(['show']);
+
 });
     
 Route::middleware(['auth:sanctum', 'role:employer'])->prefix('employer')->group(function () {
@@ -80,6 +89,13 @@ Route::middleware(['auth:sanctum', 'role:employer'])->prefix('employer')->group(
 
     Route::get('/candidates', [CandidateSearchController::class, 'index']);
     Route::get('/candidates/{candidate}', [CandidateSearchController::class, 'show']);
+    Route::get('/plans', [EmployerSubscriptionController::class, 'availablePlans']);
+    Route::get('/subscription', [EmployerSubscriptionController::class, 'current']);
+    Route::post('/subscription', [EmployerSubscriptionController::class, 'subscribe']);
+    Route::post('/subscription/cancel', [EmployerSubscriptionController::class, 'cancel']);
+    Route::post('/subscription/checkout', [PaymentController::class, 'createCheckoutSession']);
+    Route::post('/subscription/paypal/checkout', [PaypalPaymentController::class, 'createOrder']);
+    Route::post('/subscription/paypal/capture', [PaypalPaymentController::class, 'captureOrder']);
 });
 
 Route::middleware(['auth:sanctum', 'role:candidate'])->prefix('candidate')->group(function () {
@@ -112,7 +128,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/comments/{comment}', [CommentController::class, 'destroy']);
     Route::post('/comments/{comment}/report', [CommentController::class, 'report']);
 });
-
+Route::post('/webhooks/stripe', [StripeWebhookController::class, 'handle']);
 Route::prefix('jobs')->group(function () {
     Route::get('/', [PublicJobListingController::class, 'index']);
     Route::get('/search', [JobSearchController::class, 'index']);
