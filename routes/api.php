@@ -96,6 +96,7 @@ Route::middleware(['auth:sanctum', 'role:employer'])->prefix('employer')->group(
     Route::post('/subscription/checkout', [PaymentController::class, 'createCheckoutSession']);
     Route::post('/subscription/paypal/checkout', [PaypalPaymentController::class, 'createOrder']);
     Route::post('/subscription/paypal/capture', [PaypalPaymentController::class, 'captureOrder']);
+    Route::get('/payments/history', [PaymentController::class, 'history']);
 });
 
 Route::middleware(['auth:sanctum', 'role:candidate'])->prefix('candidate')->group(function () {
