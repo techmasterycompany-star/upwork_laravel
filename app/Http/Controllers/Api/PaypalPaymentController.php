@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
 use App\Models\Subscription;
+use App\Services\AuditLogger;
 use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -77,6 +78,13 @@ class PaypalPaymentController extends Controller
         if (($result['status'] ?? null) !== 'COMPLETED') {
             $subscription = Subscription::find($data['subscription_id']);
             if ($subscription) {
+                AuditLogger::log(
+                    action: 'payment_failed',
+                    modelType: Subscription::class,
+                    modelId: $subscription->id,
+                    newValues: ['gateway' => 'paypal', 'order_id' => $data['order_id']]
+                );
+
                 $this->notifyEmployerOfFailedPayment($subscription);
             }
 
@@ -102,6 +110,18 @@ class PaypalPaymentController extends Controller
         ]);
 
         $subscription->update(['status' => 'active']);
+
+        AuditLogger::log(
+            action: 'payment_completed',
+            modelType: Payment::class,
+            modelId: $payment->id,
+            newValues: [
+                'amount' => $payment->amount,
+                'currency' => $payment->currency,
+                'gateway' => 'paypal',
+                'subscription_id' => $subscription->id,
+            ]
+        );
 
         $this->notifyEmployerOfSuccessfulPayment($subscription, $payment);
 

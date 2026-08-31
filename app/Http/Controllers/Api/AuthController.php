@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\VerificationCodeMail;
 use App\Mail\ResetPasswordCodeMail;
+use App\Services\AuditLogger;
 
 class AuthController extends Controller
 {
@@ -49,6 +50,13 @@ class AuthController extends Controller
             ]);
 
         }
+
+        AuditLogger::log(
+            action: 'user_registered',
+            modelType: User::class,
+            modelId: $user->id,
+            newValues: ['name' => $user->name, 'email' => $user->email, 'role' => $user->role]
+        );
 
         $plainCode = random_int(100000, 999999);
 

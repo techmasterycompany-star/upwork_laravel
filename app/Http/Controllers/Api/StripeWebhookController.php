@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
 use App\Models\Subscription;
+use App\Services\AuditLogger;
 use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -73,6 +74,18 @@ class StripeWebhookController extends Controller
 
         $subscription->update(['status' => 'active']);
 
+        AuditLogger::log(
+            action: 'payment_completed',
+            modelType: Payment::class,
+            modelId: $payment->id,
+            newValues: [
+                'amount' => $payment->amount,
+                'currency' => $payment->currency,
+                'gateway' => 'stripe',
+                'subscription_id' => $subscription->id,
+            ]
+        );
+
         $this->notifyEmployerOfSuccessfulPayment($subscription, $payment);
     }
 
@@ -94,6 +107,13 @@ class StripeWebhookController extends Controller
             Log::warning('Stripe webhook: subscription not found (expired session)', ['subscription_id' => $subscriptionId]);
             return;
         }
+
+        AuditLogger::log(
+            action: 'payment_failed',
+            modelType: Subscription::class,
+            modelId: $subscription->id,
+            newValues: ['gateway' => 'stripe', 'reason' => 'checkout_session_expired']
+        );
 
         $this->notifyEmployerOfFailedPayment($subscription);
     }

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\RejectApplicationRequest;
 use App\Models\Application;
 use App\Models\JobListing;
+use App\Services\AuditLogger;
 use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -55,10 +56,20 @@ class EmployerApplicationController extends Controller
     {
         $this->authorizeOwnership($request, $application);
 
+        $oldStatus = $application->status;
+
         $application->update([
             'status' => 'under_review',
             'reviewed_at' => now(),
         ]);
+
+        AuditLogger::log(
+            action: 'application_reviewed',
+            modelType: Application::class,
+            modelId: $application->id,
+            oldValues: ['status' => $oldStatus],
+            newValues: ['status' => 'under_review']
+        );
 
         $this->notifyCandidateOfStatusChange($application, 'under_review');
 
@@ -74,10 +85,20 @@ class EmployerApplicationController extends Controller
     {
         $this->authorizeOwnership($request, $application);
 
+        $oldStatus = $application->status;
+
         $application->update([
             'status' => 'accepted',
             'reviewed_at' => $application->reviewed_at ?? now(),
         ]);
+
+        AuditLogger::log(
+            action: 'application_accepted',
+            modelType: Application::class,
+            modelId: $application->id,
+            oldValues: ['status' => $oldStatus],
+            newValues: ['status' => 'accepted']
+        );
 
         $this->notifyCandidateOfStatusChange($application, 'accepted');
 
@@ -92,11 +113,21 @@ class EmployerApplicationController extends Controller
     {
         $this->authorizeOwnership($request, $application);
 
+        $oldStatus = $application->status;
+
         $application->update([
             'status' => 'rejected',
             'rejection_reason' => $request->validated('rejection_reason'),
             'reviewed_at' => $application->reviewed_at ?? now(),
         ]);
+
+        AuditLogger::log(
+            action: 'application_rejected',
+            modelType: Application::class,
+            modelId: $application->id,
+            oldValues: ['status' => $oldStatus],
+            newValues: ['status' => 'rejected', 'rejection_reason' => $application->rejection_reason]
+        );
 
         $this->notifyCandidateOfStatusChange($application, 'rejected', $application->rejection_reason);
 

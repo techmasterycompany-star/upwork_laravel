@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreApplicationRequest;
 use App\Models\Application;
 use App\Models\JobListing;
+use App\Services\AuditLogger;
 use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -68,6 +69,13 @@ class CandidateApplicationController extends Controller
 
         $job->increment('applications_count');
 
+        AuditLogger::log(
+            action: 'application_submitted',
+            modelType: Application::class,
+            modelId: $application->id,
+            newValues: ['status' => $application->status, 'job_id' => $job->id]
+        );
+
         // Issue #37: notify the employer that a new application came in.
         if ($job->employer && $job->employer->user) {
             NotificationService::send(
@@ -100,7 +108,17 @@ class CandidateApplicationController extends Controller
             ], 422);
         }
 
+        $oldStatus = $application->status;
+
         $application->update(['status' => 'cancelled']);
+
+        AuditLogger::log(
+            action: 'application_cancelled',
+            modelType: Application::class,
+            modelId: $application->id,
+            oldValues: ['status' => $oldStatus],
+            newValues: ['status' => 'cancelled']
+        );
 
         return response()->json([
             'success' => true,

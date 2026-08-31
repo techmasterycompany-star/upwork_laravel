@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreJobListingRequest;
 use App\Http\Requests\UpdateJobListingRequest;
 use App\Models\JobListing;
+use App\Services\AuditLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -81,6 +82,13 @@ class JobListingController extends Controller
         $employerProfile->increment('free_jobs_used');
     }
 
+    AuditLogger::log(
+        action: 'job_created',
+        modelType: JobListing::class,
+        modelId: $job->id,
+        newValues: ['status' => $job->status, 'title' => $job->title]
+    );
+
     return response()->json([
         'success' => true,
         'message' => 'Job listing created and submitted for approval.',
@@ -91,11 +99,21 @@ class JobListingController extends Controller
     
     public function update(UpdateJobListingRequest $request, JobListing $job): JsonResponse
     {
+        $oldValues = $job->only(array_keys($request->validated()));
+
         $job->update(collect($request->validated())->except('technologies')->toArray());
 
         if ($request->has('technologies')) {
             $job->technologies()->sync($request->input('technologies', []));
         }
+
+        AuditLogger::log(
+            action: 'job_updated',
+            modelType: JobListing::class,
+            modelId: $job->id,
+            oldValues: $oldValues,
+            newValues: collect($request->validated())->except('technologies')->toArray()
+        );
 
         return response()->json([
             'success' => true,
@@ -113,7 +131,17 @@ class JobListingController extends Controller
             ], 403);
         }
 
+        $oldStatus = $job->status;
+
         $job->update(['status' => 'closed']);
+
+        AuditLogger::log(
+            action: 'job_closed',
+            modelType: JobListing::class,
+            modelId: $job->id,
+            oldValues: ['status' => $oldStatus],
+            newValues: ['status' => 'closed']
+        );
 
         return response()->json([
             'success' => true,
