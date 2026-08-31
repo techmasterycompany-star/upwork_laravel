@@ -6,12 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreApplicationRequest;
 use App\Models\Application;
 use App\Models\JobListing;
+use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class CandidateApplicationController extends Controller
 {
-   
+
     public function index(Request $request): JsonResponse
     {
         $applications = $request->user()->candidateProfile
@@ -66,6 +67,20 @@ class CandidateApplicationController extends Controller
         ]);
 
         $job->increment('applications_count');
+
+        // Issue #37: notify the employer that a new application came in.
+        if ($job->employer && $job->employer->user) {
+            NotificationService::send(
+                user: $job->employer->user,
+                type: 'application_received',
+                title: 'New application received',
+                content: "A candidate applied to your job listing \"{$job->title}\".",
+                data: [
+                    'application_id' => $application->id,
+                    'job_id'         => $job->id,
+                ],
+            );
+        }
 
         return response()->json([
             'success' => true,

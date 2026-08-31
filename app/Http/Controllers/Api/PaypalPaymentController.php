@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
 use App\Models\Subscription;
+use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Srmklive\PayPal\Services\PayPal as PayPalClient;
@@ -74,6 +75,11 @@ class PaypalPaymentController extends Controller
         $result = $provider->capturePaymentOrder($data['order_id']);
 
         if (($result['status'] ?? null) !== 'COMPLETED') {
+            $subscription = Subscription::find($data['subscription_id']);
+            if ($subscription) {
+                $this->notifyEmployerOfFailedPayment($subscription);
+            }
+
             return response()->json([
                 'success' => false,
                 'message' => 'Payment not completed.',
@@ -85,7 +91,7 @@ class PaypalPaymentController extends Controller
 
         $capture = $result['purchase_units'][0]['payments']['captures'][0] ?? null;
 
-        Payment::create([
+        $payment = Payment::create([
             'subscription_id' => $subscription->id,
             'amount' => $capture['amount']['value'] ?? 0,
             'currency' => $capture['amount']['currency_code'] ?? 'USD',
@@ -97,10 +103,63 @@ class PaypalPaymentController extends Controller
 
         $subscription->update(['status' => 'active']);
 
+        $this->notifyEmployerOfSuccessfulPayment($subscription, $payment);
+
         return response()->json([
             'success' => true,
             'message' => 'Payment captured, subscription activated.',
             'data' => $subscription->fresh('plan'),
         ]);
+    }
+
+    /**
+     * Issue #39: notify the employer when their payment succeeds.
+     */
+    private function notifyEmployerOfSuccessfulPayment(Subscription $subscription, Payment $payment): void
+    {
+        $subscription->loadMissing('employer.user', 'plan');
+
+        if (! $subscription->employer || ! $subscription->employer->user) {
+            return;
+        }
+
+        $planName = $subscription->plan->name ?? 'your plan';
+
+        NotificationService::send(
+            user: $subscription->employer->user,
+            type: 'payment_success',
+            title: 'Payment successful',
+            content: "Your payment of {$payment->amount} {$payment->currency} for \"{$planName}\" was processed successfully via PayPal.",
+            data: [
+                'payment_id'      => $payment->id,
+                'subscription_id' => $subscription->id,
+                'gateway'         => 'paypal',
+            ],
+        );
+    }
+
+    /**
+     * Issue #39: notify the employer when their PayPal payment fails to complete.
+     */
+    private function notifyEmployerOfFailedPayment(Subscription $subscription): void
+    {
+        $subscription->loadMissing('employer.user', 'plan');
+
+        if (! $subscription->employer || ! $subscription->employer->user) {
+            return;
+        }
+
+        $planName = $subscription->plan->name ?? 'your plan';
+
+        NotificationService::send(
+            user: $subscription->employer->user,
+            type: 'payment_failed',
+            title: 'Payment failed',
+            content: "Your payment for \"{$planName}\" via PayPal was not completed.",
+            data: [
+                'subscription_id' => $subscription->id,
+                'gateway'         => 'paypal',
+            ],
+        );
     }
 }

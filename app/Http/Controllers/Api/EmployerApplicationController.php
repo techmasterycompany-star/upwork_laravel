@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\RejectApplicationRequest;
 use App\Models\Application;
 use App\Models\JobListing;
+use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -31,7 +32,7 @@ class EmployerApplicationController extends Controller
         ]);
     }
 
-  
+
     public function show(Request $request, Application $application): JsonResponse
     {
         $application->load('job', 'candidate.user', 'candidate.skills');
@@ -49,7 +50,7 @@ class EmployerApplicationController extends Controller
         ]);
     }
 
-   
+
     public function markReviewed(Request $request, Application $application): JsonResponse
     {
         $this->authorizeOwnership($request, $application);
@@ -59,6 +60,8 @@ class EmployerApplicationController extends Controller
             'reviewed_at' => now(),
         ]);
 
+        $this->notifyCandidateOfStatusChange($application, 'under_review');
+
         return response()->json([
             'success' => true,
             'message' => 'Application marked as under review.',
@@ -66,7 +69,7 @@ class EmployerApplicationController extends Controller
         ]);
     }
 
-    
+
     public function accept(Request $request, Application $application): JsonResponse
     {
         $this->authorizeOwnership($request, $application);
@@ -75,6 +78,8 @@ class EmployerApplicationController extends Controller
             'status' => 'accepted',
             'reviewed_at' => $application->reviewed_at ?? now(),
         ]);
+
+        $this->notifyCandidateOfStatusChange($application, 'accepted');
 
         return response()->json([
             'success' => true,
@@ -93,6 +98,8 @@ class EmployerApplicationController extends Controller
             'reviewed_at' => $application->reviewed_at ?? now(),
         ]);
 
+        $this->notifyCandidateOfStatusChange($application, 'rejected', $application->rejection_reason);
+
         return response()->json([
             'success' => true,
             'message' => 'Application rejected.',
@@ -106,6 +113,38 @@ class EmployerApplicationController extends Controller
             $application->job->employer_id === $request->user()->employerProfile?->id,
             403,
             'You are not authorized to manage this application.'
+        );
+    }
+
+    /**
+     * Issue #37: notify the candidate whenever their application status changes.
+     */
+    protected function notifyCandidateOfStatusChange(Application $application, string $status, ?string $reason = null): void
+    {
+        $application->loadMissing('candidate.user', 'job');
+
+        if (! $application->candidate || ! $application->candidate->user) {
+            return;
+        }
+
+        $jobTitle = $application->job->title ?? 'the job';
+
+        [$title, $content] = match ($status) {
+            'accepted'     => ['Application accepted', "Your application for \"{$jobTitle}\" has been accepted."],
+            'rejected'     => ['Application rejected', "Your application for \"{$jobTitle}\" has been rejected." . ($reason ? " Reason: {$reason}" : '')],
+            'under_review' => ['Application under review', "Your application for \"{$jobTitle}\" is now under review."],
+            default        => ['Application status updated', "Your application for \"{$jobTitle}\" status changed to {$status}."],
+        };
+
+        NotificationService::send(
+            user: $application->candidate->user,
+            type: 'application_status_changed',
+            title: $title,
+            content: $content,
+            data: [
+                'application_id' => $application->id,
+                'status'         => $status,
+            ],
         );
     }
 }

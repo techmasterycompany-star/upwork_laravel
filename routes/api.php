@@ -27,6 +27,7 @@ use App\Http\Controllers\Api\Admin\PlanController;
 use App\Http\Controllers\Api\EmployerSubscriptionController;
 use App\Http\Controllers\Api\StripeWebhookController;
 use App\Http\Controllers\Api\PaypalPaymentController;
+use App\Http\Controllers\Api\NotificationController;
 
 
 
@@ -128,6 +129,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/comments/{comment}', [CommentController::class, 'update']);
     Route::delete('/comments/{comment}', [CommentController::class, 'destroy']);
     Route::post('/comments/{comment}/report', [CommentController::class, 'report']);
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
+    Route::patch('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
+    Route::patch('/notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
+    Route::patch('/notifications/{notification}/unread', [NotificationController::class, 'markAsUnread']);
+    Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy']);
 });
 Route::post('/webhooks/stripe', [StripeWebhookController::class, 'handle']);
 Route::prefix('jobs')->group(function () {
