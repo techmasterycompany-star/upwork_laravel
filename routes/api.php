@@ -24,10 +24,12 @@ use App\Http\Controllers\Api\CandidateApplicationController;
 use App\Http\Controllers\Api\CommentController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\Admin\PlanController;
+use App\Http\Controllers\Api\AiController;
 use App\Http\Controllers\Api\EmployerSubscriptionController;
 use App\Http\Controllers\Api\StripeWebhookController;
 use App\Http\Controllers\Api\PaypalPaymentController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\ChatbotController;
 
 
 
@@ -98,6 +100,7 @@ Route::middleware(['auth:sanctum', 'role:employer'])->prefix('employer')->group(
     Route::post('/subscription/paypal/checkout', [PaypalPaymentController::class, 'createOrder']);
     Route::post('/subscription/paypal/capture', [PaypalPaymentController::class, 'captureOrder']);
     Route::get('/payments/history', [PaymentController::class, 'history']);
+    Route::post('/jobs/generate-description', [AiController::class, 'generateJobDescription']);
 });
 
 Route::middleware(['auth:sanctum', 'role:candidate'])->prefix('candidate')->group(function () {
@@ -122,6 +125,7 @@ Route::middleware(['auth:sanctum', 'role:candidate'])->prefix('candidate')->grou
     Route::get('/applications', [CandidateApplicationController::class, 'index']);
     Route::get('/applications/{application}', [CandidateApplicationController::class, 'show']);
     Route::patch('/applications/{application}/cancel', [CandidateApplicationController::class, 'cancel']);
+    Route::post('/jobs/{job}/generate-cover-letter', [AiController::class, 'generateCoverLetter']);
 });
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -135,6 +139,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
     Route::patch('/notifications/{notification}/unread', [NotificationController::class, 'markAsUnread']);
     Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy']);
+    Route::post('/chatbot/ask', [ChatbotController::class, 'ask']);
 });
 Route::post('/webhooks/stripe', [StripeWebhookController::class, 'handle']);
 Route::prefix('jobs')->group(function () {

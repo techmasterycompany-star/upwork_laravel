@@ -35,7 +35,11 @@ return [
     'key' => env('STRIPE_KEY'),
     'secret' => env('STRIPE_SECRET'),
     'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
-],
+    ],
+    'gemini' => [
+     'key' => env('GEMINI_API_KEY'),
+     'model' => 'gemini-2.0-flash',
+    ],
     
 
 ];
