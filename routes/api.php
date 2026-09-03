@@ -30,7 +30,7 @@ use App\Http\Controllers\Api\StripeWebhookController;
 use App\Http\Controllers\Api\PaypalPaymentController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ChatbotController;
-
+use App\Http\Controllers\Api\EmployerAnalyticsController;
 
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
@@ -44,7 +44,8 @@ Route::prefix('auth')->group(function () {
     Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
     Route::post('/verify-reset-code', [AuthController::class, 'verifyResetCode']);
     Route::post('/reset-password', [AuthController::class, 'resetPassword']);
-
+    Route::get('/linkedin/redirect', [AuthController::class, 'redirectToLinkedIn']);
+    Route::get('/linkedin/callback', [AuthController::class, 'handleLinkedInCallback']);
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
     });
@@ -101,6 +102,7 @@ Route::middleware(['auth:sanctum', 'role:employer'])->prefix('employer')->group(
     Route::post('/subscription/paypal/capture', [PaypalPaymentController::class, 'captureOrder']);
     Route::get('/payments/history', [PaymentController::class, 'history']);
     Route::post('/jobs/generate-description', [AiController::class, 'generateJobDescription']);
+    Route::get('/analytics', [EmployerAnalyticsController::class, 'index']);
 });
 
 Route::middleware(['auth:sanctum', 'role:candidate'])->prefix('candidate')->group(function () {

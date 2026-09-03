@@ -19,12 +19,9 @@ class Notification extends Model
         'read_at',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'data' => 'array',
-        ];
-    }
+   protected $casts = [
+    'data' => 'array',
+];
 
     public function user()
     {

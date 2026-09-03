@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Mail;
 use App\Mail\VerificationCodeMail;
 use App\Mail\ResetPasswordCodeMail;
 use App\Services\AuditLogger;
+use Laravel\Socialite\Facades\Socialite;
 
 class AuthController extends Controller
 {
@@ -348,6 +349,103 @@ class AuthController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Password reset successfully.',
+        ]);
+    }
+
+    /**
+     * Issue #44: step 1 of the LinkedIn OAuth flow.
+     * The frontend calls this to get the URL to send the user's browser to.
+     */
+    public function redirectToLinkedIn(): JsonResponse
+    {
+        $url = Socialite::driver('linkedin')
+            ->stateless()
+            ->redirect()
+            ->getTargetUrl();
+
+        return response()->json([
+            'success' => true,
+            'url' => $url,
+        ]);
+    }
+
+    /**
+     * Issue #44: step 2 - LinkedIn redirects the browser here with a `code`.
+     * We exchange it for the candidate's name/email/avatar, then either log
+     * them into their existing account or create a new candidate account,
+     * pre-filled with the LinkedIn data (auto-fill for application fields).
+     */
+    public function handleLinkedInCallback(): JsonResponse
+    {
+        try {
+            $linkedinUser = Socialite::driver('linkedin')->stateless()->user();
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'LinkedIn authentication failed. Please try again.',
+            ], 401);
+        }
+
+        $email = $linkedinUser->getEmail();
+
+        if (! $email) {
+            return response()->json([
+                'success' => false,
+                'message' => 'LinkedIn did not return an email address for this account.',
+            ], 422);
+        }
+
+        $user = User::where('email', $email)->first();
+
+        if (! $user) {
+            // New account - always created as a candidate, since LinkedIn import
+            // is a candidate-facing feature (auto-fill application fields).
+            $user = User::create([
+                'name'              => $linkedinUser->getName() ?? $linkedinUser->getNickname() ?? 'LinkedIn User',
+                'email'             => $email,
+                'password'          => Hash::make(str()->random(32)), // unusable random password; user can set one later via "forgot password"
+                'role'              => 'candidate',
+                'email_verified_at' => now(), // LinkedIn already verified this email
+            ]);
+
+            $user->candidateProfile()->create([
+                'bio'           => null,
+                'portfolio_url' => null,
+                'resume'        => null,
+                'phone'         => null,
+                'location'      => null,
+            ]);
+
+            AuditLogger::log(
+                action: 'user_registered',
+                modelType: User::class,
+                modelId: $user->id,
+                newValues: ['name' => $user->name, 'email' => $user->email, 'role' => $user->role, 'via' => 'linkedin']
+            );
+        }
+
+        if ($user->is_blocked) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Your account is blocked.',
+            ], 403);
+        }
+
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'success' => true,
+            'message' => 'LinkedIn login successful.',
+            'token' => $token,
+            'token_type' => 'Bearer',
+            'user' => $user,
+            // Issue #44: auto-fill data the frontend can drop straight into
+            // an application form / profile form for review before saving.
+            'linkedin_profile' => [
+                'name'   => $linkedinUser->getName(),
+                'email'  => $linkedinUser->getEmail(),
+                'avatar' => $linkedinUser->getAvatar(),
+            ],
         ]);
     }
 }
