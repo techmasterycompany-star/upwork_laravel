@@ -37,13 +37,13 @@ return [
     'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
     ],
     'gemini' => [
-     'key' => env('GEMINI_API_KEY'),
-     'model' => 'gemini-2.0-flash',
+    'key' => env('GEMINI_API_KEY'),
+    'model' => env('GEMINI_MODEL', 'gemini-3.6-flash'),
     ],
     'linkedin' => [
     'client_id' => env('LINKEDIN_CLIENT_ID'),
     'client_secret' => env('LINKEDIN_CLIENT_SECRET'),
     'redirect' => env('LINKEDIN_REDIRECT_URI'),
-],
+    ],
 
 ];

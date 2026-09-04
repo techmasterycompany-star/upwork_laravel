@@ -14,8 +14,7 @@ class GeminiService
     public static function generateJson(string $prompt): ?array
     {
         $apiKey = config('services.gemini.key');
-        $model  = config('services.gemini.model', 'gemini-2.0-flash');
-
+        $model = config('services.gemini.model', 'gemini-3.6-flash');   
         $response = Http::timeout(30)->post(
             "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key={$apiKey}",
             [
@@ -64,7 +63,7 @@ class GeminiService
     public static function chat(string $systemInstruction, array $history): ?string
     {
         $apiKey = config('services.gemini.key');
-        $model  = config('services.gemini.model', 'gemini-2.0-flash');
+        $model = config('services.gemini.model', 'gemini-3.6-flash');
 
         $contents = array_map(
             fn (array $turn) => [
@@ -74,28 +73,39 @@ class GeminiService
             $history
         );
 
-        $response = Http::timeout(30)->post(
-            "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key={$apiKey}",
-            [
-                'system_instruction' => [
-                    'parts' => [['text' => $systemInstruction]],
-                ],
-                'contents' => $contents,
-                'generationConfig' => [
-                    'temperature' => 0.6,
-                ],
-            ]
-        );
+      $response = Http::timeout(30)->post(
+    "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key={$apiKey}",
+    [
+        'systemInstruction' => [
+            'parts' => [
+                ['text' => $systemInstruction],
+            ],
+        ],
+
+        'contents' => $contents,
+
+        'generationConfig' => [
+            'temperature' => 0.6,
+        ],
+    ]
+);
 
         if ($response->failed()) {
-            Log::error('Gemini chat API request failed', [
-                'status' => $response->status(),
-                'body'   => $response->body(),
-            ]);
-            return null;
-        }
+    Log::error('Gemini API request failed', [
+        'status' => $response->status(),
+        'body' => $response->body(),
+        'model' => $model,
+    ]);
 
-        $text = $response->json('candidates.0.content.parts.0.text');
+    return null;
+}
+
+       $text = $response->json('candidates.0.content.parts.0.text');
+
+Log::info('Gemini response', [
+    'text' => $text,
+    'response' => $response->json(),
+]);
 
         if (! $text) {
             Log::warning('Gemini chat API returned no text content', ['response' => $response->json()]);

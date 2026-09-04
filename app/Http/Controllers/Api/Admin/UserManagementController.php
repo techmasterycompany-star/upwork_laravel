@@ -30,7 +30,7 @@ class UserManagementController extends Controller
             $query->where('is_blocked', $request->boolean('is_blocked'));
         }
 
-        $users = $query->latest()->paginate(20);
+        $users = $query->latest()->get();
 
         return response()->json([
             'success' => true,

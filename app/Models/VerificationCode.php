@@ -17,13 +17,10 @@ class VerificationCode extends Model
         'expires_at',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'expires_at' => 'datetime',
-            'is_used' => 'boolean',
-        ];
-    }
+    protected $casts = [
+        'expires_at' => 'datetime',
+        'is_used' => 'boolean',
+    ];
 
     public function user()
     {

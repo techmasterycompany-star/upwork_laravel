@@ -34,7 +34,7 @@ class CommentModerationController extends Controller
 
     public function destroy(Comment $comment): JsonResponse
     {
-        $comment->delete();
+        $comment->forceDelete();
 
         return response()->json([
             'success' => true,

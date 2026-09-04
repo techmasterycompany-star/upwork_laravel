@@ -11,6 +11,7 @@ class Technology extends Model
 
     protected $fillable = [
         'name',
+        'slug',
     ];
 
     public function jobs()

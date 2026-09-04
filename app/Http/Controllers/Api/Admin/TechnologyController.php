@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Technology;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class TechnologyController extends Controller
 {
@@ -27,6 +28,7 @@ class TechnologyController extends Controller
 
         $technology = Technology::create([
             'name' => $data['name'],
+            'slug' => Str::slug($data['name']),
         ]);
 
         return response()->json([
@@ -44,6 +46,7 @@ class TechnologyController extends Controller
 
         $technology->update([
             'name' => $data['name'],
+            'slug' => Str::slug($data['name']),
         ]);
 
         return response()->json([

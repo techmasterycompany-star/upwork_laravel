@@ -31,20 +31,24 @@ class SavedSearchController extends Controller
         ], 201);
     }
 
-    public function destroy(Request $request, SavedSearch $savedSearch): JsonResponse
-    {
-        if ($savedSearch->user_id !== $request->user()->id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'You are not authorized to delete this saved search.',
-            ], 403);
-        }
+public function destroy(Request $request, $id): JsonResponse
+{
+    $savedSearch = $request->user()
+        ->savedSearches()
+        ->find($id);
 
-        $savedSearch->delete();
-
+    if (!$savedSearch) {
         return response()->json([
-            'success' => true,
-            'message' => 'Saved search deleted successfully.',
-        ]);
+            'success' => false,
+            'message' => 'Saved search not found.',
+        ], 404);
     }
+
+    $savedSearch->delete();
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Saved search deleted successfully.',
+    ]);
+}
 }

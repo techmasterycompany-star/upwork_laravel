@@ -24,6 +24,7 @@ class User extends Authenticatable
     'password',
     'role',
     'email_verified_at',
+    'is_blocked',
 ];
 
     /**
@@ -36,13 +37,16 @@ class User extends Authenticatable
         'remember_token',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
-    }
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+        'is_blocked' => 'boolean',
+    ];
 
     public function employerProfile()
     {
